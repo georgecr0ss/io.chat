@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>IO Chat</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <script src="/socket.io/socket.io.js">
+
+    </script>
+
+    <style>
+      body {
+          margin-top: 30px;
+      }
+
+      #message-area {
+        opacity: 0;
+      }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="user-area">
+            <div class="col-md-12">
+                <form id="user-form">
+                    <div class="form-group">
+                        <label for="">Enter Username</label>
+                        <input type="text" class="form-control" id="username"/>
+                        <input type="submit" class="btn btn-primary" value="Submit"/>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <div id="message-area"class="row">
+            <div class="col-md-4">
+                <div class="well">
+                    <h3>Online users</h3>
+                    <ul id="users"></ul>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="chat" id="chat">
+
+                </div>
+                <form id="message-form">
+                    <div class="form-group">
+                        <label>Form Message</label>
+                        <textarea class="form-control"  id="message"></textarea>
+                        <br>
+                        <input type="submit" class="btn btn-primary" value="Send Message"/>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        'use strict';
+        window.onload = function () {
+                var socket = io.connect(),
+                $select = function(domElement) { return document.querySelector(domElement) },
+                $messageArea = $select('#message-area'),
+                $userArea = $select('#user-area'),
+                $userForm = $select('#user-form'),
+                $messageFrom = $select('#message-form'),
+                $message = $select('#message'),
+                $username = $select('#username'),
+                $users = $select('#users'),
+                $chat = $select('#chat'),
+                createElement = function(type, value, className) {
+                    var element = document.createElement(type);
+                    element.innerHTML = value;
+                    element.setAttribute('class', className);
+
+                    return element;
+                };
+
+
+                $messageFrom.onsubmit = function(e) {
+                    e.preventDefault();
+                    socket.emit('send message', $message.value)
+                    $message.value = '';
+                }
+
+                $userForm.onsubmit = function(e) {
+                    e.preventDefault();
+                    socket.emit('new user', $username.value, function(data) {
+                        if (data)  {
+                            $messageArea.style.opacity = 1;
+                            $userArea.style.opacity = 0;
+                        }
+                    });
+                    $username.value = '';
+                }
+
+                socket.on('new message', function(data) {
+                    var message = '<strong>' + data.user + '</strong>' + ': ' + data.msg;
+                    $chat.appendChild(createElement('div', message, 'well'));
+                });
+
+                socket.on('get users', function(usernames) {
+                    usernames.forEach(function(user) {
+                        $users.appendChild(createElement('li', user, 'user'));
+                    });
+                });
+            };
+    </script>
+</body>
+</html>
